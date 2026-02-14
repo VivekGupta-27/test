@@ -1,3 +1,8 @@
+import { useEffect, useState } from "react";
+import { getCurrentUser, fetchUserAttributes } from "aws-amplify/auth";
+
+
+
 import { useDailyStats } from "@/hooks/use-stats";
 import { useTasks } from "@/hooks/use-tasks";
 import { format } from "date-fns";
@@ -17,6 +22,27 @@ import {
 import { cn } from "@/lib/utils";
 
 export default function Dashboard() {
+    const [loggedInUserName, setLoggedInUserName] = useState<string>("");
+
+  useEffect(() => {
+  async function loadUser() {
+    try {
+      const user = await getCurrentUser();
+      const attributes = await fetchUserAttributes();
+
+      // Use name attribute if available, otherwise use username
+      const displayName = attributes.name || attributes.preferred_username || user.username;
+      setLoggedInUserName(displayName);
+
+    } catch (error) {
+      console.error("Failed to load user:", error);
+      setLoggedInUserName("User");
+    }
+  }
+
+  loadUser();
+}, []);
+
   const { data: stats, isLoading: statsLoading } = useDailyStats();
   const { data: tasks, isLoading: tasksLoading } = useTasks();
 
@@ -28,7 +54,7 @@ export default function Dashboard() {
   
   // Use mock data if API is empty/loading for better visual representation
   const progressPercent = stats 
-    ? Math.min(Math.round((stats.totalMinutesCompleted / (stats.totalMinutesPlanned || 1)) * 100), 100) 
+    ? Math.min(Math.round((stats?.totalMinutesCompleted ?? 0 / (stats.totalMinutesPlanned || 1)) * 100), 100) 
     : 0;
 
   const burnoutRisk = stats?.burnoutRisk || "Low";
@@ -42,7 +68,7 @@ export default function Dashboard() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground">
-              Welcome, Saloni
+              Welcome, {loggedInUserName}
             </h1>
             <p className="text-muted-foreground mt-1 text-sm font-medium">
               {format(today, "EEEE, MMMM do, yyyy")}
