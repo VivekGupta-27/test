@@ -1,4 +1,4 @@
-import "./aws-config";
+//import "./aws-config";
 
 
 import { createRoot } from "react-dom/client";
